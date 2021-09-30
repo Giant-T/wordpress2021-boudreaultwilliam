@@ -1,0 +1,8 @@
+tbody, th {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+tr:nth-child(even) {
+    background-color: rgb(235, 235, 235);
+}

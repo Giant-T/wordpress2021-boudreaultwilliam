@@ -1,0 +1,15 @@
+# ignore all images
+*.png
+*.jpg
+*.jpeg
+
+# ignore the config file
+wp-config.php
+
+# ignore log files and databases
+*.log
+*.sql
+*.sqlite
+
+# ignore dev folder
+dev/
