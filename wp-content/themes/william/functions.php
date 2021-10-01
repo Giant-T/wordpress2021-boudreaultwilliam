@@ -308,3 +308,18 @@ function william_initialisation_bd() {
 }
 
 add_action( "after_switch_theme", "william_initialisation_bd" );
+
+/**
+ * Avertir l'usager qu'une maintenance du site est prévue prochainement.
+ *
+ * Utilisation : add_action( 'loop_start', 'monprefixe_avertir_maintenance' );
+ *
+ * @author Christiane Lagacé
+ *
+ */
+// function monprefixe_avertir_maintenance( $array ) {
+//    // on pourrait aussi travailler avec la base de données pour savoir quand un message doit être affiché ou non et pour retrouver le message à afficher.
+//    echo '<div class="messagegeneral">Attention : le 16 juin à 11h, des travaux d\'entretien seront effectués. Le site ne sera pas disponible pendant deux heures.</div>';
+// };
+
+// add_action( 'loop_start', 'monprefixe_avertir_maintenance' );
