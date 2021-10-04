@@ -191,15 +191,17 @@ function william_afficheritems() {
 
 /**
  * Mets le style sur le shortcode afficher item
+ * @author William Boudreault
  */
 function william_style_afficher() {
-   wp_enqueue_style( 'williamafficheritems', get_stylesheet_directory_uri() . '/css/william-afficher-items.css' );
+   wp_enqueue_style( 'williamafficheritems', get_stylesheet_directory_uri() . '/css/william-afficher-table.css' );
 }
 
 add_shortcode('williamafficheritems', 'william_afficheritems');
 add_action('wp_enqueue_scripts', 'william_style_afficher');
 
-/** Crée les tables et insère les données
+/** 
+ * Crée les tables et insère les données
  * @author William Boudreault 
  */
 function william_initialisation_bd() {
@@ -310,6 +312,131 @@ function william_initialisation_bd() {
 add_action( "after_switch_theme", "william_initialisation_bd" );
 
 /**
+ * Ajout de la table jaime lors du changement de theme
+ * @author William Boudreault
+ */
+function william_ajouter_table_jaime() {
+   global $wpdb;
+
+   $charset_collate = $wpdb->get_charset_collate();
+   $table_matable =  $wpdb->prefix . 'william_likes';
+
+   $sql = "CREATE TABLE $table_matable (
+      id bigint(20) NOT NULL AUTO_INCREMENT,
+      usager_id bigint(20) NOT NULL,
+      date datetime NOT NULL,
+      PRIMARY KEY (id)
+    ) $charset_collate; ";
+
+   require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+   dbDelta( $sql );
+   william_insert_table_jaime($table_matable);
+}
+
+/**
+ * Insertion des donnees dans la table jaime
+ * @author William Boudreault
+ */
+function william_insert_table_jaime($table) {
+   global $wpdb;
+
+   $requete = "SELECT COUNT(*) FROM $table";
+   $presence_donnees = $wpdb->get_var( $requete );
+
+   if ( is_null( $presence_donnees ) || $presence_donnees == 0 ) {
+      $donnees = array(
+         array( 1, 1, '2021-10-04' ),
+         array( 2, 1, '2021-10-04' ),
+         array( 3, 1, '2021-10-04' ),
+      );
+      
+      foreach( $donnees as $donnee ) {
+         $reussite = $wpdb->insert(
+            $table,
+            array(
+                  'id' => $donnee[0],
+                  'usager_id' => $donnee[1],
+                  'date' => $donnee[2],
+            ),
+
+            array(
+                  '%d',
+                  '%d',
+                  '%s',
+            )
+         );
+
+         if ( ! $reussite ) {
+            william_log_debug( $wpdb->last_error );
+         }
+
+      }
+   }
+}
+
+add_action( "after_switch_theme", "william_ajouter_table_jaime" );
+
+/**
+ * Affiche les utilisateurs qui ont aimer ainsi que la date de leur jaime
+ * @author William Boudreault
+ */
+function william_afficher_jaimes() {
+   global $wpdb;
+   $output = '';
+   $table_likes = $wpdb->prefix . 'william_likes';
+   $table_users = $wpdb->prefix . 'users';
+
+   $requete = "SELECT user_nicename, convert(DATE, date) as date_jaime FROM $table_likes INNER JOIN $table_users ON $table_users.id = usager_id;";
+   $resultat = $wpdb->get_results( $requete );
+
+   $erreur_sql = $wpdb->last_error;
+
+   if ( $erreur_sql == "" ) {
+      if ( $wpdb->num_rows > 0 ) {
+         $output .= "<table>";
+         $output .= "<tbody>";
+         $output .= "<tr>";
+         $output .= "<th>". __("Nom") ."</th>";
+         $output .= "<th>". __("Date") ."</th>";
+         $output .= "</tr>";
+         foreach( $resultat as $enreg ) {
+            $output .= "<tr>";
+            $output .= "<td>$enreg->user_nicename</td>";
+            $output .= "<td>$enreg->date_jaime</td>";
+            $output .= "</tr>";
+         }
+         $output .= "</tbody>";
+         $output .= "</table>";
+      } else {
+         $output .= '<div class="messageavertissement">';
+         $output .= __( 'Aucune donnée ne correspond aux critères demandés.', 'fr-ca' );
+         $output .= '</div>';
+      }
+
+   } else {
+      $output .= '<div class="messageerreur">';
+      $output .= __( 'Oups ! Un problème a été rencontré.', 'fr-ca' );
+      $output .= '</div>';
+
+      // afficher l'erreur à l'écran seulement si on est en mode débogage
+      william_echo_debug( $erreur_sql );
+   }
+
+   return $output;
+}
+
+/**
+ * Mets le style sur le shortcode afficher jaime 
+ * @author William Boudreault
+ */
+function william_style_afficher_jaimes() {
+   wp_enqueue_style( 'williamafficherjaimes', get_stylesheet_directory_uri() . '/css/william-afficher-table.css' );
+}
+
+add_shortcode('williamafficherjaimes', 'william_afficher_jaimes');
+add_action('wp_enqueue_scripts', 'william_style_afficher_jaimes');
+
+/**
  * Avertir l'usager qu'une maintenance du site est prévue prochainement.
  *
  * Utilisation : add_action( 'loop_start', 'monprefixe_avertir_maintenance' );
@@ -317,9 +444,9 @@ add_action( "after_switch_theme", "william_initialisation_bd" );
  * @author Christiane Lagacé
  *
  */
-// function monprefixe_avertir_maintenance( $array ) {
-//    // on pourrait aussi travailler avec la base de données pour savoir quand un message doit être affiché ou non et pour retrouver le message à afficher.
-//    echo '<div class="messagegeneral">Attention : le 16 juin à 11h, des travaux d\'entretien seront effectués. Le site ne sera pas disponible pendant deux heures.</div>';
-// };
+function william_avertir_maintenance( $array ) {
+   // on pourrait aussi travailler avec la base de données pour savoir quand un message doit être affiché ou non et pour retrouver le message à afficher.
+   echo '<div class="messagegeneral">'. __('Attention : le 16 juin à 11h, des travaux d\'entretien seront effectués. Le site ne sera pas disponible pendant deux heures.') . '</div>';
+};
 
 // add_action( 'loop_start', 'monprefixe_avertir_maintenance' );
