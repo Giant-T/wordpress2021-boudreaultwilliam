@@ -131,6 +131,10 @@ function william_echo_debug( $message ) {
    }
 }
 
+/**
+ * Ajouter mon favicon
+ * @author William Boudreault
+ */
 function william_monfavicon() {
    echo '<link rel="icon" href="'. get_site_url() .'/favicon.png" />';
 }
@@ -156,10 +160,10 @@ function william_afficheritems() {
          $output .= "<table>";
          $output .= "<tbody>";
          $output .= "<tr>";
-         $output .= "<th>Titre</th>";
-         $output .= "<th>Auteur</th>";
-         $output .= "<th>Categorie</th>";
-         $output .= "<th>Nombre de pages</th>";
+         $output .= "<th>". __("Titre", "william") ."</th>";
+         $output .= "<th>". __("Auteur", "william") ."</th>";
+         $output .= "<th>". __("Categorie", "william") ."</th>";
+         $output .= "<th>". __("Nombre de pages", "william") ."</th>";
          $output .= "</tr>";
          foreach( $resultat as $enreg ) {
             $output .= "<tr>";
@@ -173,13 +177,13 @@ function william_afficheritems() {
          $output .= "</table>";
       } else {
          $output .= '<div class="messageavertissement">';
-         $output .= __( 'Aucune donnée ne correspond aux critères demandés.', 'fr-ca' );
+         $output .= __( 'Aucune donnée ne correspond aux critères demandés.', 'william' );
          $output .= '</div>';
       }
 
    } else {
       $output .= '<div class="messageerreur">';
-      $output .= __( 'Oups ! Un problème a été rencontré.', 'fr-ca' );
+      $output .= __( 'Oups ! Un problème a été rencontré.', 'william' );
       $output .= '</div>';
 
       // afficher l'erreur à l'écran seulement si on est en mode débogage
@@ -325,12 +329,12 @@ function william_ajouter_table_jaime() {
       id bigint(20) NOT NULL AUTO_INCREMENT,
       usager_id bigint(20) NOT NULL,
       date datetime NOT NULL,
-      PRIMARY KEY (id)
+      PRIMARY KEY  (id)
     ) $charset_collate; ";
 
    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
    dbDelta( $sql );
-   william_insert_table_jaime($table_matable);
+   william_insert_table_jaime( $table_matable );
 }
 
 /**
@@ -343,7 +347,7 @@ function william_insert_table_jaime($table) {
    $requete = "SELECT COUNT(*) FROM $table";
    $presence_donnees = $wpdb->get_var( $requete );
 
-   if ( is_null( $presence_donnees ) || $presence_donnees == 0 ) {
+   if ( is_null( $presence_donnees ) || ! $presence_donnees ) {
       $donnees = array(
          array( 1, 1, '2021-10-04' ),
          array( 2, 1, '2021-10-04' ),
@@ -386,7 +390,7 @@ function william_afficher_jaimes() {
    $table_likes = $wpdb->prefix . 'william_likes';
    $table_users = $wpdb->prefix . 'users';
 
-   $requete = "SELECT user_nicename, convert(DATE, date) as date_jaime FROM $table_likes INNER JOIN $table_users ON $table_users.id = usager_id;";
+   $requete = "SELECT user_nicename, convert(DATE, date) as date_jaime FROM $table_likes INNER JOIN $table_users ON $table_users.id = usager_id ORDER BY date_jaime ASC;";
    $resultat = $wpdb->get_results( $requete );
 
    $erreur_sql = $wpdb->last_error;
@@ -396,8 +400,8 @@ function william_afficher_jaimes() {
          $output .= "<table>";
          $output .= "<tbody>";
          $output .= "<tr>";
-         $output .= "<th>". __("Nom") ."</th>";
-         $output .= "<th>". __("Date") ."</th>";
+         $output .= "<th>". __("Nom", "william") ."</th>";
+         $output .= "<th>". __("Date", "william") ."</th>";
          $output .= "</tr>";
          foreach( $resultat as $enreg ) {
             $output .= "<tr>";
@@ -409,13 +413,13 @@ function william_afficher_jaimes() {
          $output .= "</table>";
       } else {
          $output .= '<div class="messageavertissement">';
-         $output .= __( 'Aucune donnée ne correspond aux critères demandés.', 'fr-ca' );
+         $output .= __( 'Aucune donnée ne correspond aux critères demandés.', "william");
          $output .= '</div>';
       }
 
    } else {
       $output .= '<div class="messageerreur">';
-      $output .= __( 'Oups ! Un problème a été rencontré.', 'fr-ca' );
+      $output .= __( 'Oups ! Un problème a été rencontré.', "william");
       $output .= '</div>';
 
       // afficher l'erreur à l'écran seulement si on est en mode débogage
@@ -450,3 +454,28 @@ function william_avertir_maintenance( $array ) {
 };
 
 // add_action( 'loop_start', 'monprefixe_avertir_maintenance' );
+
+
+function william_creer_page_admin() {
+   global $title;
+   ?>
+   <div class="wrap">
+      <h1 class="wp-heading-inline"><?php echo $title; ?></h1>
+      <?php
+         echo william_afficheritems();
+      ?> 
+   </div>
+   <?php
+}
+
+function william_ajouter_menu_tableau_bord() {
+   add_menu_page(
+      __("William - Gestion", "william"),
+      __("William", "william"),
+      "manage_options",
+      "william_gestion",
+      "william_creer_page_admin"
+   );
+}
+
+add_action( "admin_menu", "william_ajouter_menu_tableau_bord" );
