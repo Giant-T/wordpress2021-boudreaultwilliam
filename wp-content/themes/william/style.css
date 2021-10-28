@@ -20,5 +20,35 @@ html, body {
     /* add back negative margin value */
     padding: 0.25rem 9999rem;
     font-weight: bold;
-    background-color: rgb(245,200,2)
+    background-color: rgb(245,200,2);
+}
+
+.message-erreur {
+    margin: 0 -9999rem;
+    margin-bottom: 3px;
+    /* add back negative margin value */
+    padding: 0.25rem 9999rem;
+    font-weight: bold;
+    color: white;
+    background-color: orangered;
+}
+
+.message-reussite {
+    margin: 0 -9999rem;
+    margin-bottom: 3px;
+    /* add back negative margin value */
+    padding: 0.25rem 9999rem;
+    font-weight: bold;
+    color: white;
+    background-color: forestgreen;
+}
+
+.input-erreur {
+    border: 2px solid orangered !important;
+}
+
+.label-erreur {
+    color: orangered;
+    font-weight: bold;
+    margin-left: 10px;
 }

@@ -136,7 +136,12 @@ function william_echo_debug( $message ) {
  * @author William Boudreault
  */
 function william_monfavicon() {
-   echo '<link rel="icon" href="'. get_site_url() .'/favicon.png" />';
+   if (WP_DEBUG) {
+      echo '<link rel="icon" href="'. get_site_url().'/image.png"  type="image/png" />';
+   }
+   else {
+      echo '<link rel="icon" href="'. get_site_url().'/favicon.png"  type="image/png" />';
+   }
 }
 
 add_action('wp_head', 'william_monfavicon');
@@ -210,17 +215,27 @@ add_action('wp_enqueue_scripts', 'william_style_afficher');
  */
 function william_initialisation_bd() {
    global $wpdb;
-
+   
    $charset_collate = $wpdb->get_charset_collate();
-   $table_matable =  $wpdb->prefix . 'william_categorie';
+   $table_matable =  $wpdb->prefix . 'william_courriel';
+   require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
+   $sql = "CREATE TABLE $table_matable (
+      id bigint(20) unsigned primary key auto_increment,
+      courriel varchar(255) not null,
+      sujet varchar(255) not null,
+      message varchar(10000) not null,
+      date date not null
+   ) $charset_collate";
+   dbDelta( $sql );
+
+   $table_matable =  $wpdb->prefix . 'william_categorie';
    $sql = "CREATE TABLE $table_matable (
       id bigint(20) unsigned primary key auto_increment,
       titre varchar(255),
       description varchar(255)
    ) $charset_collate;";
 
-   require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
    dbDelta( $sql );
    $requete = "SELECT COUNT(*) FROM $table_matable";
    $presence_donnees = $wpdb->get_var( $requete );
@@ -443,7 +458,7 @@ add_action('wp_enqueue_scripts', 'william_style_afficher_jaimes');
 /**
  * Avertir l'usager qu'une maintenance du site est prévue prochainement.
  *
- * Utilisation : add_action( 'loop_start', 'monprefixe_avertir_maintenance' );
+ * Utilisation : add_action( 'loop_start', 'william_avertir_maintenance' );
  *
  * @author Christiane Lagacé
  *
@@ -453,9 +468,13 @@ function william_avertir_maintenance( $array ) {
    echo '<div class="messagegeneral">'. __('Attention : le 16 juin à 11h, des travaux d\'entretien seront effectués. Le site ne sera pas disponible pendant deux heures.') . '</div>';
 };
 
-// add_action( 'loop_start', 'monprefixe_avertir_maintenance' );
+// add_action( 'loop_start', 'william_avertir_maintenance' );
 
 
+/**
+ * Cree une page d'admin.
+ * @author William Boudreault
+ */
 function william_creer_page_admin() {
    global $title;
    ?>
@@ -468,6 +487,11 @@ function william_creer_page_admin() {
    <?php
 }
 
+/**
+ * Ajoute un menu a la page admin
+ * 
+ * @author William Boudreault
+ */
 function william_ajouter_menu_tableau_bord() {
    add_menu_page(
       __("William - Gestion", "william"),
@@ -479,3 +503,132 @@ function william_ajouter_menu_tableau_bord() {
 }
 
 add_action( "admin_menu", "william_ajouter_menu_tableau_bord" );
+
+/**
+ * Affichage du formulaire de contact
+ * 
+ * @author William Boudreault
+ */
+function william_afficher_formulaire() {
+   $champCourriel = __("Courriel", "william");
+   $champSujet = __("Sujet", "william");
+   $champMessage = __("Message", "william");
+   $output = "<form id='formulaire-contact' action='". get_stylesheet_directory_uri(). "/envoyer-courriel-contact.php"."' method='post'>
+                  <label for='courriel'>*$champCourriel:</label><br>
+                  <input type='email' id='courriel' name='courriel' placeholder='exemple@courriel.abc'><br>
+                  <label for='sujet'>*$champSujet:</label><br>
+                  <input type='text' id='sujet' name='sujet' placeholder='Sujet'><br>
+                  <label for='message'>*$champMessage:</label><br>
+                  <textarea id='message' name='message'></textarea><br>
+                  <input type='submit' value='Soumettre'>
+               </form>";
+   return $output;
+}
+
+add_shortcode('williamafficherformulaire', 'william_afficher_formulaire');
+
+/**
+ * Active les variables de session.
+ *
+ * Utilisation : add_action( 'init', 'william_session_start', 1 );
+ *
+ * @author Christiane Lagacé
+ *
+ */
+function william_session_start() {
+   if ( ! session_id() ) {
+      @session_start();
+   }
+}
+ 
+add_action( 'init', 'william_session_start', 1 );
+
+/**
+* Configurer l'envoi de courriel par SMTP.
+*
+* Utilisation : add_action( 'phpmailer_init', 'monprefixe_configurer_courriel' );
+* L'envoi de courriel ser fera comme suit :
+* wp_mail( "destinataire@sondomaine.com", "Sujet", "Message" );
+*
+* @author Christiane Lagacé
+*
+*/
+function william_configurer_courriel( $phpmailer ) {
+   $phpmailer->isSMTP();
+   $phpmailer->Host = SMTP_HOST;
+   $phpmailer->SMTPAuth = SMTP_AUTH;
+   $phpmailer->Port = SMTP_PORT;
+   $phpmailer->SMTPSecure = SMTP_SECURE;
+   $phpmailer->Username = SMTP_USERNAME;
+   $phpmailer->Password = SMTP_PASSWORD;
+   $phpmailer->From = SMTP_FROM;
+   $phpmailer->FromName = SMTP_FROMNAME;
+   $phpmailer->SMTPOptions = array(
+      'ssl' => array(
+      'verify_peer' => false,
+      'verify_peer_name' => false,
+      'allow_self_signed' => true
+      )
+      );
+}
+
+add_action( 'phpmailer_init', 'william_configurer_courriel' );
+
+/**
+ * Logue les erreurs en cas de problème si WP_DEBUG est à true.
+ *
+ * Utilisation : add_action('wp_mail_failed', 'monprefixe_erreur_courriel', 10, 1);
+ * Ceci appellera automatiquement cette fonction en cas d'erreur après avoir fait
+ * wp_mail( "destinataire@sondomaine.com", "Sujet", "Message" );
+ *
+ * @author Christiane Lagacé
+ *
+ */
+function william_erreur_courriel( $wp_error ) {
+   william_log_debug( $wp_error );
+}
+
+add_action( 'wp_mail_failed', 'william_erreur_courriel', 10, 1 );
+
+/**
+ * Affiche le message si le formulare a reussie
+ * 
+ * @author William Boudreault
+ */
+function william_afficher_message_formulaire() {
+   if ( isset( $_SESSION['reussite_courriel'] ) && isset( $_SESSION['message_courriel'] ) ) {
+      if ( $_SESSION['reussite_courriel'] ) {
+         echo "<div class='message-reussite'>";
+      }
+      else {
+         echo "<div class='message-erreur'>";
+      }
+      echo $_SESSION['message_courriel'];
+      echo "</div>";
+
+      $_SESSION['message_courriel'] = null;
+      $_SESSION['reussite_courriel'] = null;
+   }
+
+   if ( isset( $_SESSION['reussite_bd'] ) && isset( $_SESSION['message_bd'] ) ) {
+      if ( $_SESSION['reussite_bd'] ) {
+         echo "<div class='message-reussite'>";
+      }
+      else {
+         echo "<div class='message-erreur'>";
+      }
+      echo $_SESSION['message_bd'];
+      echo "</div>";
+
+      $_SESSION['message_bd'] = null;
+      $_SESSION['reussite_bd'] = null;
+   }
+}
+
+add_shortcode('williamaffichermessageformulaire', 'william_afficher_message_formulaire');
+
+function william_charger_js() {
+   wp_enqueue_script( 'mes-scripts', get_stylesheet_directory_uri() . '/script.js', array(), null, true );
+}
+
+add_action( 'wp_enqueue_scripts', 'william_charger_js' );
