@@ -509,23 +509,23 @@ add_action( "admin_menu", "william_ajouter_menu_tableau_bord" );
  * 
  * @author William Boudreault
  */
-function william_afficher_formulaire() {
+function william_formulaire_contact() {
    $champCourriel = __("Courriel", "william");
    $champSujet = __("Sujet", "william");
    $champMessage = __("Message", "william");
-   $output = "<form id='formulaire-contact' action='". get_stylesheet_directory_uri(). "/envoyer-courriel-contact.php"."' method='post'>
+   $output = "<form id='formulaireContact' action='". get_stylesheet_directory_uri(). "/envoyer-courriel-contact.php"."' method='post'>
                   <label for='courriel'>*$champCourriel:</label><br>
                   <input type='email' id='courriel' name='courriel' placeholder='exemple@courriel.abc'><br>
                   <label for='sujet'>*$champSujet:</label><br>
                   <input type='text' id='sujet' name='sujet' placeholder='Sujet'><br>
                   <label for='message'>*$champMessage:</label><br>
                   <textarea id='message' name='message'></textarea><br>
-                  <input type='submit' value='Soumettre'>
+                  <input type='submit' name='soumissionFormContact' value='Soumettre'>
                </form>";
    return $output;
 }
 
-add_shortcode('williamafficherformulaire', 'william_afficher_formulaire');
+add_shortcode('williamformulairecontact', 'william_formulaire_contact');
 
 /**
  * Active les variables de session.
@@ -627,8 +627,23 @@ function william_afficher_message_formulaire() {
 
 add_shortcode('williamaffichermessageformulaire', 'william_afficher_message_formulaire');
 
+/**
+ * Charge les scripts du theme.
+ * 
+ * @author William Boudreault
+ */
 function william_charger_js() {
-   wp_enqueue_script( 'mes-scripts', get_stylesheet_directory_uri() . '/script.js', array(), null, true );
+   global $post;
+
+   // charge Google reCAPTCHA seulement si on est sur le formulaire de contact
+   if ( has_shortcode( $post->post_content, 'williamformulairecontact') ) {
+      wp_enqueue_script( 'script_formulaire_contact', get_stylesheet_directory_uri() . '/js/formulaire_script.js', array(), null, true );
+      // charge l'API de Google reCAPTCHA
+      wp_enqueue_script( 'apigooglerecaptcha', 'https://www.google.com/recaptcha/api.js?render=6LdyR_0cAAAAAIHvUfQUdWy8PbiVsFuphgL4u1O4' );
+
+      // charge le code JavaScript pour gérer Google reCAPTCHA
+      wp_enqueue_script( 'googlerecaptcha', get_stylesheet_directory_uri() . '/js/google-recaptcha.js' );
+   }
 }
 
 add_action( 'wp_enqueue_scripts', 'william_charger_js' );

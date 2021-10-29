@@ -5,7 +5,7 @@ const sujet = document.getElementById('sujet');
 
 const message = document.getElementById('message');
 
-const formulaireContact = document.getElementById('formulaire-contact');
+const formulaireContact = document.getElementById('formulaireContact');
 
 if (courriel != null && courriel.labels.length > 0) {
     courriel.onblur = () => {
@@ -65,14 +65,14 @@ function validerCourriel(champCourriel, labelCourriel) {
  * 
  * @returns {boolean} True si le champ est valide. | False si le champ est invalide.
  */
-function validerChamp(champVerif, labelChamp, longuerMax) {
+function validerChamp(champVerif, labelChamp, longueurMax) {
     if (champVerif != null && labelChamp != null) {
         let valide = false;
         if (champVerif.value.length < 1) {
             ajouterMessageErreur(champVerif, labelChamp, "Le champ n'est pas rempli.");
         }
-        else if (champVerif.value.length > 50) {
-            ajouterMessageErreur(champVerif, labelChamp, "Le champ doit comporter moins de 50 caractères.");
+        else if (champVerif.value.length > longueurMax) {
+            ajouterMessageErreur(champVerif, labelChamp, `Le champ doit comporter moins de ${longueurMax} caractères.`);
         }
         else {
             valide = true;
