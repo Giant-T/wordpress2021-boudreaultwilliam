@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     }
 
     if (formulaireContact != null) {
-        formulaireContact.onsubmit = validerFormulaireContact;
+        formulaireContact.onsubmit = gererRecaptcha;
     }
 });
 
@@ -120,7 +120,6 @@ function retirerMessageErreur(input, label) {
     if (input != null && label != null) {
         input.classList.remove("input-erreur");
         if (label.nextSibling.tagName == "SPAN") {
-            console.log("message");
             label.parentNode.removeChild(label.nextSibling);
         }
     }
@@ -130,17 +129,15 @@ function retirerMessageErreur(input, label) {
  * Valide le formulaire de contact et empeche l'envoi s'il n'est pas complet.
  * 
  * @author William Boudreault
- * 
- * @param {Event} event Evenement lancer par le submit du formulaire.
  */
-function validerFormulaireContact(event) {
+function validerFormulaireContact() {
     const courrielValide = validerCourriel(courriel, courriel.labels[0]);
     const sujetValide = validerChamp(sujet, sujet.labels[0], 50);
     const messageValide = validerChamp(message, message.labels[0], 500);
-    const captchaValide = gererRecaptcha();
-    if (!courrielValide || !sujetValide || !messageValide) {
-        event.preventDefault();
+    if (courrielValide && sujetValide && messageValide) {
+        return true;
     }
+    return false;
 }
 
 /**
@@ -148,7 +145,9 @@ function validerFormulaireContact(event) {
  * 
  * @returns {boolean} True si le captcha est valide. | False si le captcha est invalide.
  */
-function gererRecaptcha() {
+function gererRecaptcha(event) {
+    event.preventDefault();
+
     // note : ceci n'est pas du jQuery et fonctionnera avec en JavaScript pur
     grecaptcha.ready(function() {
         grecaptcha.execute('6LdyR_0cAAAAAIHvUfQUdWy8PbiVsFuphgL4u1O4', {action: 'soumissioncontact'}).then(function(token) {
@@ -160,8 +159,11 @@ function gererRecaptcha() {
             formulaireContact.appendChild(input);
 
             // soumission du formulaire
-            return true;   // ne cause pas de boucle sans fin puisqu'ici, aucun événement submit n'est déclenché (https://developer.mozilla.org/fr/docs/Web/API/HTMLFormElement/submit)       
+            if (!validerFormulaireContact()) {
+                event.preventDefault();
+            } else {   // ne cause pas de boucle sans fin puisqu'ici, aucun événement submit n'est déclenché (https://developer.mozilla.org/fr/docs/Web/API/HTMLFormElement/submit)       
+                formulaireContact.submit();
+            }
         });
     });
-    return false
 }

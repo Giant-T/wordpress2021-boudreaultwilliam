@@ -33,7 +33,7 @@ if (isset($_POST['message'])) {
     }
 }
 
-if ( isset($_POST['soumissionFormContact']) ) {
+if ( isset($_POST['courriel']) ) {
     // si le captcha a été reçu
     if ( $captcha ) {
         $url = 'https://www.google.com/recaptcha/api/siteverify';
@@ -103,12 +103,15 @@ if ( isset($_POST['soumissionFormContact']) ) {
             }
         } else {
             // Test échoué. Afficher un message du genre "Le jeton de sécurité a expiré ou vous êtes considéré comme un robot. Votre message n'a pas pu être envoyé."
-            $_SESSION['message_courriel'] = __('Le jeton de sécurité a expiré ou vous êtes considéré comme un robot. Votre message n\'a pas pu être envoyé.');
+            $_SESSION['message_courriel'] = __('Le jeton de sécurité a expiré ou vous êtes considéré comme un robot. Votre message n\'a pas pu être envoyé.', 'william');
         }
     } else {
         // Captcha pas reçu. Afficher un message du genre "Il n'est pas possible de vérifier si vous êtes un robot pour l'instant. Votre message n'a pas pu être envoyé."
-            $_SESSION['message_courriel'] = __('Il n\'est pas possible de vérifier si vous êtes un robot pour l\'instant. Votre message n\'a pas pu être envoyé.');
+            $_SESSION['message_courriel'] = __('Il n\'est pas possible de vérifier si vous êtes un robot pour l\'instant. Votre message n\'a pas pu être envoyé.', 'william');
     }
+}
+else {
+    $_SESSION['message_courriel'] = __('Vous ne provenez pas du formulaire.', 'william');
 }
 
 
