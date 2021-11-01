@@ -63,9 +63,7 @@ if ( isset($_POST['soumissionFormContact']) ) {
         if ( $clesReponse['success'] == true && $clesReponse['action'] == 'soumissioncontact' ) {
             // le test est réussi, on peut poursuivre le traitement du formulaire, notamment la validation côté serveur, puis procéder à l'envoi du courriel
             if ( isset( $courriel ) && isset( $sujet ) && isset( $message ) ) {
-                $_SESSION['reussite_courriel'] = false;
                 $_SESSION['message_courriel'] = '';
-                $_SESSION['reussite_bd'] = false;
                 $_SESSION['message_bd'] = '';
                 $table_matable =  $wpdb->prefix . 'william_courriel';
 

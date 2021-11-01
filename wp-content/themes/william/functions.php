@@ -481,11 +481,66 @@ function william_creer_page_admin() {
    <div class="wrap">
       <h1 class="wp-heading-inline"><?php echo $title; ?></h1>
       <?php
+         $url_ajout = admin_url( "admin.php?page=william_ajout" );
+         echo "<a href='$url_ajout' class='page-title-action'>". __( "Ajouter", 'william') . "</a>";
+         echo "<hr class='wp-header-end'>";
          echo william_afficheritems();
       ?> 
    </div>
    <?php
 }
+
+function william_creer_page_ajout() {
+   global $title;
+   $url_action = get_stylesheet_directory_uri() . '/enregistrer-item.php';
+   ?>
+   <div class="wrap">
+      <h1 class="wp-heading-inline"><?php echo $title; ?></h1>
+      <form method="post" id="formulaireItem" action=" <?php echo $url_action; ?>" >
+         <?php wp_nonce_field( 'ajouter_item_bd', 'validite_nonce', true ); ?>
+         <label for="titre"><?php _e('Titre', 'william') ?>:</label><br>
+         <input type="text" id="titre" name="titre" required placeholder='<?php _e('Titre', 'william') ?>'><br>
+         <label for="categorie"><?php _e('Categorie', 'william') ?>:</label><br>
+         <select id="categorie" name="categorie">
+            <option value="1" selected>Fiction</option>
+            <option value="2">Horreur</option>
+            <option value="3">Fantastique</option>
+            <option value="4">Manuel</option>
+         </select><br>
+         <label for="auteur"><?php _e('Auteur', 'william') ?>:</label><br>
+         <input type="text" id="auteur" name="auteur" required placeholder='<?php _e('Auteur', 'william') ?>'><br>
+         <label for="description"><?php _e('Description', 'william') ?>:</label><br>
+         <textarea id="description" name="description"></textarea><br>
+         <label for="nombrePage"><?php _e('Nombre de pages', 'william') ?> (1, 10000):</label><br>
+         <input type="number" id="nombrePage" name="nombrePage" required min='1' max="10000" placeholder='1'><br>
+         <input type="submit" name="soumettre" value="Sumbit">
+      </form>
+   </div>
+   <?php
+}
+
+/**
+ * Affiche un message indiquant que l'item a été ajouté avec succès, seulement si la variable de session existe.
+ *
+ * Utilisation : add_action( 'admin_notices', 'william_message_ajout_item_reussi' );
+ *
+ * @author Christiane Lagacé
+ *
+ */
+function william_message_ajout_item_reussi() {
+    if ( isset( $_SESSION['william_ajout_reussi'] ) && $_SESSION['william_ajout_reussi'] == true ) {
+ 
+        echo '<div class="notice notice-success is-dismissable"><p>';
+        _e( "L'item a été ajouté avec succès !", "william" );
+        echo '</p></div>';
+ 
+        // supprime la variable de session pour ne pas que le message soit affiché à nouveau
+        $_SESSION['monprefixe_ajout_reussi'] = null;
+ 
+    }
+}
+ 
+add_action( 'admin_notices', 'william_message_ajout_item_reussi' );
 
 /**
  * Ajoute un menu a la page admin
@@ -499,6 +554,15 @@ function william_ajouter_menu_tableau_bord() {
       "manage_options",
       "william_gestion",
       "william_creer_page_admin"
+   );
+
+   add_submenu_page(
+      'william_gestion',
+      __("William - Ajouter Items", "william"),
+      __("Ajouter items", 'william'),
+      "manage_options",
+      "william_ajout",
+      "william_creer_page_ajout"
    );
 }
 
@@ -640,9 +704,6 @@ function william_charger_js() {
       wp_enqueue_script( 'script_formulaire_contact', get_stylesheet_directory_uri() . '/js/formulaire_script.js', array(), null, true );
       // charge l'API de Google reCAPTCHA
       wp_enqueue_script( 'apigooglerecaptcha', 'https://www.google.com/recaptcha/api.js?render=6LdyR_0cAAAAAIHvUfQUdWy8PbiVsFuphgL4u1O4' );
-
-      // charge le code JavaScript pour gérer Google reCAPTCHA
-      wp_enqueue_script( 'googlerecaptcha', get_stylesheet_directory_uri() . '/js/google-recaptcha.js' );
    }
 }
 

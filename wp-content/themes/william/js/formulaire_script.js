@@ -1,33 +1,37 @@
-// Variables du formulaire
-const courriel = document.getElementById('courriel');
+// il faut laisser le temps à WordPress de charger la page et plus particulièrement le shortcode qui affiche le formulaire
+document.addEventListener("DOMContentLoaded", function(event) {
+    // Variables du formulaire
+    const courriel = document.getElementById('courriel');
 
-const sujet = document.getElementById('sujet');
+    const sujet = document.getElementById('sujet');
 
-const message = document.getElementById('message');
+    const message = document.getElementById('message');
 
-const formulaireContact = document.getElementById('formulaireContact');
+    const formulaireContact = document.getElementById('formulaireContact');
 
-if (courriel != null && courriel.labels.length > 0) {
-    courriel.onblur = () => {
-        validerCourriel(courriel, courriel.labels[0]);
-    };
-}
+    if (courriel != null && courriel.labels.length > 0) {
+        courriel.onblur = () => {
+            validerCourriel(courriel, courriel.labels[0]);
+        };
+    }
 
-if (sujet != null && sujet.labels.length > 0) {
-    sujet.onblur = () => {
-        validerChamp(sujet, sujet.labels[0], 50);
-    };
-}
+    if (sujet != null && sujet.labels.length > 0) {
+        sujet.onblur = () => {
+            validerChamp(sujet, sujet.labels[0], 50);
+        };
+    }
 
-if (message != null && message.labels.length > 0) {
-    message.onblur = () => {
-        validerChamp(message, message.labels[0], 500);
-    };
-}
+    if (message != null && message.labels.length > 0) {
+        message.onblur = () => {
+            validerChamp(message, message.labels[0], 500);
+        };
+    }
 
-if (formulaireContact != null) {
-    formulaireContact.onsubmit = validerFormulaireContact;
-}
+    if (formulaireContact != null) {
+        formulaireContact.onsubmit = validerFormulaireContact;
+    }
+});
+
 
 /**
  * Validation du champ courriel du formulaire
@@ -133,7 +137,31 @@ function validerFormulaireContact(event) {
     const courrielValide = validerCourriel(courriel, courriel.labels[0]);
     const sujetValide = validerChamp(sujet, sujet.labels[0], 50);
     const messageValide = validerChamp(message, message.labels[0], 500);
+    const captchaValide = gererRecaptcha();
     if (!courrielValide || !sujetValide || !messageValide) {
         event.preventDefault();
     }
+}
+
+/**
+ * Valide le captcha avec google recaptcha v3
+ * 
+ * @returns {boolean} True si le captcha est valide. | False si le captcha est invalide.
+ */
+function gererRecaptcha() {
+    // note : ceci n'est pas du jQuery et fonctionnera avec en JavaScript pur
+    grecaptcha.ready(function() {
+        grecaptcha.execute('6LdyR_0cAAAAAIHvUfQUdWy8PbiVsFuphgL4u1O4', {action: 'soumissioncontact'}).then(function(token) {
+            // ajout de la réponse de Google reCAPTCHA dans le formulaire
+            let input = document.createElement('input');
+            input.setAttribute("type", "hidden");
+            input.setAttribute("name", "g-recaptcha-response");
+            input.setAttribute("value", token);
+            formulaireContact.appendChild(input);
+
+            // soumission du formulaire
+            return true;   // ne cause pas de boucle sans fin puisqu'ici, aucun événement submit n'est déclenché (https://developer.mozilla.org/fr/docs/Web/API/HTMLFormElement/submit)       
+        });
+    });
+    return false
 }
