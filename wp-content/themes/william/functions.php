@@ -133,6 +133,9 @@ function william_echo_debug( $message ) {
 
 /**
  * Ajouter mon favicon
+ * 
+ * Utilisation : add_action('wp_head', 'william_monfavicon');
+ * 
  * @author William Boudreault
  */
 function william_monfavicon() {
@@ -148,9 +151,12 @@ add_action('wp_head', 'william_monfavicon');
 
 /**
  * Fonction qui affiche les items
+ * 
+ * Utilisation : add_shortcode('williamafficheritems', 'william_afficher_items');
+ * 
  * @author William Boudreault 
  */
-function william_afficheritems() {
+function william_afficher_items() {
    global $wpdb;
    $output = '';
    $table_livre = $wpdb->prefix . 'william_livre';
@@ -200,17 +206,23 @@ function william_afficheritems() {
 
 /**
  * Mets le style sur le shortcode afficher item
+ * 
+ * Utilisation : add_action('wp_enqueue_scripts', 'william_style_afficher');
+ * 
  * @author William Boudreault
  */
 function william_style_afficher() {
    wp_enqueue_style( 'williamafficheritems', get_stylesheet_directory_uri() . '/css/william-afficher-table.css' );
 }
 
-add_shortcode('williamafficheritems', 'william_afficheritems');
+add_shortcode('williamafficheritems', 'william_afficher_items');
 add_action('wp_enqueue_scripts', 'william_style_afficher');
 
 /** 
  * Crée les tables et insère les données
+ * 
+ * Utilisation : add_action( "after_switch_theme", "william_initialisation_bd" );
+ * 
  * @author William Boudreault 
  */
 function william_initialisation_bd() {
@@ -331,7 +343,10 @@ function william_initialisation_bd() {
 add_action( "after_switch_theme", "william_initialisation_bd" );
 
 /**
- * Ajout de la table jaime lors du changement de theme
+ * Ajout de la table jaime lors du changement de theme.
+ * 
+ * Utilisation : add_action( "after_switch_theme", "william_ajouter_table_jaime" );
+ * 
  * @author William Boudreault
  */
 function william_ajouter_table_jaime() {
@@ -354,6 +369,9 @@ function william_ajouter_table_jaime() {
 
 /**
  * Insertion des donnees dans la table jaime
+ * 
+ * Utilisation : william_insert_table_jaime($table);
+ * 
  * @author William Boudreault
  */
 function william_insert_table_jaime($table) {
@@ -397,6 +415,9 @@ add_action( "after_switch_theme", "william_ajouter_table_jaime" );
 
 /**
  * Affiche les utilisateurs qui ont aimer ainsi que la date de leur jaime
+ * 
+ * Utilisation : add_shortcode('williamafficherjaimes', 'william_afficher_jaimes');
+ * 
  * @author William Boudreault
  */
 function william_afficher_jaimes() {
@@ -445,7 +466,10 @@ function william_afficher_jaimes() {
 }
 
 /**
- * Mets le style sur le shortcode afficher jaime 
+ * Mets le style sur le shortcode afficher jaime
+ * 
+ * Utilisation : add_action('wp_enqueue_scripts', 'william_style_afficher_jaimes');
+ * 
  * @author William Boudreault
  */
 function william_style_afficher_jaimes() {
@@ -470,26 +494,182 @@ function william_avertir_maintenance( $array ) {
 
 // add_action( 'loop_start', 'william_avertir_maintenance' );
 
-
 /**
  * Cree une page d'admin.
+ * 
+ * Utilisation : add_menu_page(
+ *     __("William - Gestion", "william"),
+ *     __("William", "william"),
+ *     "manage_options",
+ *     "william_gestion",
+ *     "william_creer_page_admin"
+ *  );
+ * 
  * @author William Boudreault
  */
 function william_creer_page_admin() {
    global $title;
-   ?>
-   <div class="wrap">
+   
+   if ( isset( $_GET['action'] ) && $_GET['action'] == 'edit' ) {
+      if ( isset( $_GET['id'] ) ) {
+         $id = $_GET['id'];
+         william_creer_page_edition($id);
+      }
+      else {
+         echo '<div class="notice notice-warning"><p>';
+         _e( "La provenance du lien d'édition semble poser problème.", "william" );
+         echo '</p></div>';
+      }
+   }
+   else {
+      ?>
+      <div class="wrap">
       <h1 class="wp-heading-inline"><?php echo $title; ?></h1>
       <?php
-         $url_ajout = admin_url( "admin.php?page=william_ajout" );
-         echo "<a href='$url_ajout' class='page-title-action'>". __( "Ajouter", 'william') . "</a>";
-         echo "<hr class='wp-header-end'>";
-         echo william_afficheritems();
-      ?> 
+      $url_ajout = admin_url( "admin.php?page=william_ajout" );
+      echo "<a href='$url_ajout' class='page-title-action'>". __( "Ajouter", 'william') . "</a>";
+      echo "<hr class='wp-header-end'>";
+      echo william_afficher_items_admin();
+   }
+   ?> 
    </div>
    <?php
 }
 
+/**
+ * Crée la page d'édition de donnée.
+ * 
+ * Utilisation : william_creer_page_edition($id);
+ * 
+ * @author William Boudreault
+ */
+function william_creer_page_edition($id) {
+   $url_action = get_stylesheet_directory_uri() . '/mise-a-jour-item.php';
+   global $title;
+   global $wpdb;
+   $table_livre = $wpdb->prefix . 'william_livre';
+   $requete = $wpdb->prepare("SELECT titre, categorie_id, auteur, description, nombre_page FROM $table_livre WHERE id = %d;", $id);
+   $livre = $wpdb->get_row($requete);
+
+   $erreur_sql = $wpdb->last_error;
+   if ($erreur_sql == "" && $wpdb->num_rows > 0)
+   {
+      ?>
+      <div class="wrap">
+         <h1 class="wp-heading-inline"><?php echo $title; ?></h1>
+         <form method="post" id="formulaireModif" action="<?php echo $url_action; ?>">
+            <?php wp_nonce_field( "modifier_item_bd_$id", 'nonce_valide', true ); ?>
+            <input type="hidden" id="id" name="id" value="<?php echo $id; ?>">
+            <label for="titre"><?php _e('Titre', 'william'); ?>:</label><br>
+            <input type="text" id="titre" name="titre" required value="<?php echo $livre->titre; ?>"><br>
+            <label for="categorie"><?php _e('Categorie', 'william'); ?>:</label><br>
+            <select id="categorie" name="categorie" required>
+            <?php
+            $table_categorie = $wpdb->prefix . 'william_categorie'; 
+            $requete = "SELECT id, titre FROM $table_categorie ORDER BY titre ASC";
+            $resultat = $wpdb->get_results($requete);
+            $erreur_sql = $wpdb->last_error;
+            if ( $erreur_sql == "" ) {
+               if ( $wpdb->num_rows > 0 ){
+                  foreach( $resultat as $enreg ) {
+                     echo "<option value='$enreg->id' "; 
+                     if ($enreg->id == $livre->categorie_id) {echo 'selected';} 
+                     echo ">$enreg->titre</option>";
+                  }
+               }
+               else {
+                  echo "<option value='' selected>" . __("Aucune donnée est disponible", 'william') . "</option>";
+               }
+            }
+            else { 
+               echo "<option value='' selected>" . __("Accès aux données impossible.", 'william') . "</option>";
+            }
+            ?>
+            </select><br>
+            <label for="auteur"><?php _e('Auteur', 'william') ?>:</label><br>
+            <input type="text" id="auteur" name="auteur" required value="<?php echo $livre->auteur;?>"><br>
+            <label for="description"><?php _e('Description', 'william'); ?>:</label><br>
+            <textarea id="description" name="description"><?php echo esc_attr($livre->description); ?></textarea><br>
+            <label for="nombrePage"><?php _e('Nombre de pages', 'william') ?> (1, 10000):</label><br>
+            <input type="number" id="nombrePage" name="nombrePage" required min='1' max="10000" value='<?php echo $livre->nombre_page;?>'><br><br>
+            <input type="submit" name="soumettre" value="Submit">
+         </form>
+      </div>
+      <?php
+   }
+   else {
+      echo '<div class="notice notice-warning"><p>';
+      _e( "Impossible d'afficher les données de la base de données.", "william" );
+      echo '</p></div>';
+   }
+}
+
+/**
+ * Fonction qui affiche les items pour le menu admin
+ * 
+ * Utilisation : echo william_afficher_items_admin();
+ * 
+ * @author William Boudreault 
+ */
+function william_afficher_items_admin() {
+   global $wpdb;
+   $output = '';
+   $table_livre = $wpdb->prefix . 'william_livre';
+   $table_categorie = $wpdb->prefix . 'william_categorie';
+   $requete = "SELECT l.titre AS titre_livre, auteur, c.titre AS categorie, nombre_page, l.id as id_livre FROM $table_livre l INNER JOIN $table_categorie c ON c.id = l.categorie_id ORDER BY l.nombre_page ASC";
+   $resultat = $wpdb->get_results( $requete );
+   $erreur_sql = $wpdb->last_error;
+
+   if ( $erreur_sql == "" ) {
+      if ( $wpdb->num_rows > 0 ) {
+         $output .= "<table class='wp-list-table widefat fixed striped table-view-list'>";
+         $output .= '<thead>';
+         $output .= "<tr>";
+         $output .= "<th>". __("Titre", "william") ."</th>";
+         $output .= "<th>". __("Auteur", "william") ."</th>";
+         $output .= "<th>". __("Categorie", "william") ."</th>";
+         $output .= "<th>". __("Nombre de pages", "william") ."</th>";
+         $output .= "</tr>";
+         $output .= '</thead>';
+         $output .= "<tbody>";
+         foreach( $resultat as $enreg ) {
+            $output .= "<tr>";
+            $url_suppression = get_stylesheet_directory_uri() . "/suppression-item.php?id=$enreg->id_livre";
+            $url_suppression_protege = wp_nonce_url( $url_suppression, "supprimer_item_$enreg->id_livre" );
+            $output .= "<td class='title column-title has-row-actions column-primary page-title'>$enreg->titre_livre<div class='row-actions'> <span class='edit'><a href='". admin_url("admin.php?page=william_gestion&id=$enreg->id_livre&action=edit") ."'>". __( 'Modifier', 'william' ) ."</a></span> | 
+                        <span class='trash'><a href='". $url_suppression_protege ."' class='submitdelete'>". __( 'Supprimer', 'william' ) ."</a></span></div></td>";
+            $output .= "<td>$enreg->auteur</td>";
+            $output .= "<td>$enreg->categorie</td>";
+            $output .= "<td>$enreg->nombre_page</td>";
+            $output .= "</tr>";
+         }
+         $output .= "</tbody>";
+         $output .= "</table>";
+      } else {
+         $output .= '<div class="messageavertissement">';
+         $output .= __( 'Aucune donnée ne correspond aux critères demandés.', 'william' );
+         $output .= '</div>';
+      }
+
+   } else {
+      $output .= '<div class="messageerreur">';
+      $output .= __( 'Oups ! Un problème a été rencontré.', 'william' );
+      $output .= '</div>';
+
+      // afficher l'erreur à l'écran seulement si on est en mode débogage
+      william_echo_debug( $erreur_sql );
+   }
+
+   return $output;
+}
+
+/**
+ * Crée la page d'ajout d'item.
+ * 
+ * Utilisation : add_submenu_page( 'william_gestion', __("William - Ajouter Items", "william"), __("Ajouter items", 'william'), "manage_options", "william_ajout", "william_creer_page_ajout" );
+ * 
+ * @author William Boudreault
+ */
 function william_creer_page_ajout() {
    global $title;
    $url_action = get_stylesheet_directory_uri() . '/enregistrer-item.php';
@@ -501,19 +681,37 @@ function william_creer_page_ajout() {
          <label for="titre"><?php _e('Titre', 'william') ?>:</label><br>
          <input type="text" id="titre" name="titre" required placeholder='<?php _e('Titre', 'william') ?>'><br>
          <label for="categorie"><?php _e('Categorie', 'william') ?>:</label><br>
-         <select id="categorie" name="categorie">
-            <option value="1" selected>Fiction</option>
-            <option value="2">Horreur</option>
-            <option value="3">Fantastique</option>
-            <option value="4">Manuel</option>
+         <select id="categorie" name="categorie" required>
+            <?php
+            global $wpdb;
+            $table_categorie = $wpdb->prefix . 'william_categorie'; 
+            $requete = "SELECT id, titre FROM $table_categorie ORDER BY titre ASC";
+            $resultat = $wpdb->get_results($requete);
+
+            $erreur_sql = $wpdb->last_error;
+            if ( $erreur_sql == "" ) {
+               if ( $wpdb->num_rows > 0 ){
+                  echo "<option value='' selected>" . __("Veuillez selectionner une catégorie...", 'william') . "</option>";
+                  foreach( $resultat as $enreg ) {
+                     echo "<option value='$enreg->id'>$enreg->titre</option>";
+                  }
+               }
+               else {
+                  echo "<option value='' selected>" . __("Aucune donnée est disponible", 'william') . "</option>";
+               }
+            }
+            else { 
+               echo "<option value='' selected>" . __("Accès aux données impossible.", 'william') . "</option>";
+            }
+            ?>
          </select><br>
          <label for="auteur"><?php _e('Auteur', 'william') ?>:</label><br>
          <input type="text" id="auteur" name="auteur" required placeholder='<?php _e('Auteur', 'william') ?>'><br>
          <label for="description"><?php _e('Description', 'william') ?>:</label><br>
          <textarea id="description" name="description"></textarea><br>
          <label for="nombrePage"><?php _e('Nombre de pages', 'william') ?> (1, 10000):</label><br>
-         <input type="number" id="nombrePage" name="nombrePage" required min='1' max="10000" placeholder='1'><br>
-         <input type="submit" name="soumettre" value="Sumbit">
+         <input type="number" id="nombrePage" name="nombrePage" required min='1' max="10000" value='1'><br><br>
+         <input type="submit" name="soumettre" value="Submit">
       </form>
    </div>
    <?php
@@ -528,22 +726,69 @@ function william_creer_page_ajout() {
  *
  */
 function william_message_ajout_item_reussi() {
-    if ( isset( $_SESSION['william_ajout_reussi'] ) && $_SESSION['william_ajout_reussi'] == true ) {
+   if ( isset( $_SESSION['william_ajout_reussi'] ) && $_SESSION['william_ajout_reussi'] == true ) {
+      echo '<div class="notice notice-success is-dismissable"><p>';
+      _e( "L'item a été ajouté avec succès !", "william" );
+      echo '</p></div>';
  
-        echo '<div class="notice notice-success is-dismissable"><p>';
-        _e( "L'item a été ajouté avec succès !", "william" );
-        echo '</p></div>';
- 
-        // supprime la variable de session pour ne pas que le message soit affiché à nouveau
-        $_SESSION['monprefixe_ajout_reussi'] = null;
- 
-    }
+      // supprime la variable de session pour ne pas que le message soit affiché à nouveau
+      $_SESSION['william_ajout_reussi'] = null;
+   }
 }
  
 add_action( 'admin_notices', 'william_message_ajout_item_reussi' );
 
 /**
+ * Affiche un message indiquant que l'item a été modifié avec succès
+ * 
+ * Utilisation : add_action( 'admin_notices', 'william_message_modification_item_reussi' );
+ * 
+ * @author William Boudreault
+ */
+function william_message_modification_item_reussi() {
+   if ( isset( $_SESSION['william_mise_a_jour_item_reussie'] ) && isset( $_SESSION['william_erreur_mise_a_jour_item'] ) ) {
+      if ($_SESSION['william_mise_a_jour_item_reussie']) {
+         echo '<div class="notice notice-success is-dismissable"><p>';
+         _e( "L'item a été modifié avec succès !", "william" );
+      }
+      else {
+         echo '<div class="notice notice-warning is-dismissable"><p>';
+         echo $_SESSION['william_erreur_mise_a_jour_item'];
+      }
+      echo '</p></div>';
+
+      // supprime la variable de session pour ne pas que le message soit affiché à nouveau
+      $_SESSION['william_mise_a_jour_item_reussie'] = null;
+      $_SESSION['william_erreur_mise_a_jour_item'] = null;
+   }
+}
+
+add_action( 'admin_notices', 'william_message_modification_item_reussi' );
+
+/**
+ * Affiche un message indiquant que l'item a été supprimé avec succès
+ * 
+ * Utilisation : add_action( 'admin_notices', 'william_message_suppression_item_reussi' );
+ * 
+ * @author William Boudreault
+ */
+function william_message_suppression_item_reussi() {
+   if ( isset( $_SESSION['william_suppression_item_reussie'] ) && $_SESSION['william_suppression_item_reussie'] == true ) {
+      echo '<div class="notice notice-success is-dismissable"><p>';
+      _e( "L'item a été supprimé avec succès !", "william" );
+      echo '</p></div>';
+ 
+      // supprime la variable de session pour ne pas que le message soit affiché à nouveau
+      $_SESSION['william_suppression_item_reussie'] = null;
+   }
+}
+ 
+add_action( 'admin_notices', 'william_message_suppression_item_reussi' );
+
+/**
  * Ajoute un menu a la page admin
+ * 
+ * Utilisation : add_action( "admin_menu", "william_ajouter_menu_tableau_bord" );
  * 
  * @author William Boudreault
  */
@@ -570,6 +815,8 @@ add_action( "admin_menu", "william_ajouter_menu_tableau_bord" );
 
 /**
  * Affichage du formulaire de contact
+ * 
+ * Utilisation : add_shortcode('williamformulairecontact', 'william_formulaire_contact');
  * 
  * @author William Boudreault
  */
@@ -657,6 +904,8 @@ add_action( 'wp_mail_failed', 'william_erreur_courriel', 10, 1 );
 /**
  * Affiche le message si le formulare a reussie
  * 
+ * Utilisation : add_shortcode('williamaffichermessageformulaire', 'william_afficher_message_formulaire');
+ * 
  * @author William Boudreault
  */
 function william_afficher_message_formulaire() {
@@ -693,6 +942,8 @@ add_shortcode('williamaffichermessageformulaire', 'william_afficher_message_form
 
 /**
  * Charge les scripts du theme.
+ * 
+ * Utilisation : add_action( 'wp_enqueue_scripts', 'william_charger_js' );
  * 
  * @author William Boudreault
  */

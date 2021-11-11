@@ -19,7 +19,18 @@ if ( isset( $_POST['soumettre'] ) ) {   // si la page a reçu des données du fo
         }
  
         if ( isset( $_POST['categorie']) ) {
-            $categorie = htmlspecialchars( $_POST['categorie'] );
+            $existe = false;
+
+            $table_categories = $wpdb->prefix . 'william_categorie';
+            $enreg = $wpdb->get_row( $wpdb->prepare( "SELECT id FROM $table_categories WHERE id = '%d'", $_POST['categorie'] ) );
+            $erreur_sql = $wpdb->last_error;
+
+            if ( $erreur_sql == "" && $wpdb->num_rows > 0 ) {
+                $existe = true;
+            }
+            if ( $existe ) {
+                $categorie = htmlspecialchars( $_POST['categorie'] );
+            }
         }
 
         if ( isset( $_POST['auteur']) ) {
@@ -37,7 +48,7 @@ if ( isset( $_POST['soumettre'] ) ) {   // si la page a reçu des données du fo
         // traitement du formulaire
         if (isset( $titre ) && isset( $categorie ) && isset( $auteur ) && isset( $description ) && isset( $nombrePage ) ) {
             $table_matable =  $wpdb->prefix . 'william_livre';
-            $requete = $wpdb->prepare( "INSERT INTO $table_matable(titre, categorie_id, auteur, description, nombre_page) VALUES (%s, %d, %s, %s, %d);", $titre, $categorie, $auteur, $description, $auteur );
+            $requete = $wpdb->prepare( "INSERT INTO $table_matable(titre, categorie_id, auteur, description, nombre_page) VALUES (%s, %d, %s, %s, %d);", $titre, $categorie, $auteur, $description, $nombrePage );
             $reussite = $wpdb->query( $requete );
             if ($reussite) {
                 $_SESSION['william_ajout_reussi'] = true;
