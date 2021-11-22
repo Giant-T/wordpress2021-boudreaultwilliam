@@ -537,6 +537,29 @@ function william_creer_page_admin() {
 }
 
 /**
+* Charge des scripts et des feuilles de style dans toutes les pages du tableau de bord.
+*
+* Utilisation : add_action('admin_enqueue_scripts', 'william_charger_css_js_admin');
+*
+* @author Christiane Lagacé
+*
+*/
+function william_charger_css_js_admin( $hook ) {
+
+   global $william_hook_gestion; // variable initialisée lors de l'ajout de l'option de menu
+
+   // fichiers à charger seulement pour la page de gestion de mon thème
+   if ( $hook == $william_hook_gestion ) {
+
+       wp_enqueue_style( 'ma-bibliotheque-popup', get_stylesheet_directory_uri() . '/ma-bibliotheque-popup/style.css' );
+       wp_enqueue_script( 'ma-bibliotheque-popup', get_stylesheet_directory_uri() . '/ma-bibliotheque-popup/script.js', null, null, true );
+       wp_enqueue_script( 'confirmation-suppression', get_stylesheet_directory_uri() . '/js/confirmation-suppression.js', array( 'ma-bibliotheque-popup' ), null, true );
+   }
+}
+
+add_action('admin_enqueue_scripts', 'william_charger_css_js_admin');
+
+/**
  * Crée la page d'édition de donnée.
  * 
  * Utilisation : william_creer_page_edition($id);
@@ -793,7 +816,9 @@ add_action( 'admin_notices', 'william_message_suppression_item_reussi' );
  * @author William Boudreault
  */
 function william_ajouter_menu_tableau_bord() {
-   add_menu_page(
+   global $william_hook_gestion;
+
+   $william_hook_gestion = add_menu_page(
       __("William - Gestion", "william"),
       __("William", "william"),
       "manage_options",

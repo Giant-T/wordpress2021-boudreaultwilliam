@@ -5,6 +5,7 @@ require_once "../../../wp-load.php";
 // les variables de session seront initialisées à true seulement si tous les tests sont réussis
 $_SESSION['william_ajout_reussi'] = false;
 $_SESSION['william_nonce_valide'] = false;
+$_POST = stripslashes_deep($_POST);
  
 if ( isset( $_POST['soumettre'] ) ) {   // si la page a reçu des données du formulaire 
  
