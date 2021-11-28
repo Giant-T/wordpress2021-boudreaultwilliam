@@ -129,6 +129,8 @@ function retirerMessageErreur(input, label) {
  * Valide le formulaire de contact et empeche l'envoi s'il n'est pas complet.
  * 
  * @author William Boudreault
+ * 
+ * @returns {boolean} Vrai si la validation du formulaire est valide | Faux si le formulaire est invalide
  */
 function validerFormulaireContact() {
     const courrielValide = validerCourriel(courriel, courriel.labels[0]);

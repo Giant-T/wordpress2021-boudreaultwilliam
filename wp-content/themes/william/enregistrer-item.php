@@ -5,21 +5,21 @@ require_once "../../../wp-load.php";
 // les variables de session seront initialisées à true seulement si tous les tests sont réussis
 $_SESSION['william_ajout_reussi'] = false;
 $_SESSION['william_nonce_valide'] = false;
-$_POST = stripslashes_deep($_POST);
+$_POST = stripslashes_deep( $_POST );
  
 if ( isset( $_POST['soumettre'] ) ) {   // si la page a reçu des données du formulaire 
  
     // vérification de la validité du nonce
-    if ( wp_verify_nonce( $_POST['validite_nonce'], 'ajouter_item_bd' )) {
+    if ( wp_verify_nonce( $_POST['validite_nonce'], 'ajouter_item_bd' ) ) {
  
         $_SESSION['william_nonce_valide'] = true;
  
         // validation côté serveur des données lues dans le formulaire
-        if ( isset( $_POST['titre']) ) {
+        if ( isset( $_POST['titre'] ) && mb_strlen( $_POST['titre'] ) <= 255 ) {
             $titre = htmlspecialchars( $_POST['titre'] );
         }
  
-        if ( isset( $_POST['categorie']) ) {
+        if ( isset( $_POST['categorie'] ) ) {
             $existe = false;
 
             $table_categories = $wpdb->prefix . 'william_categorie';
@@ -34,11 +34,11 @@ if ( isset( $_POST['soumettre'] ) ) {   // si la page a reçu des données du fo
             }
         }
 
-        if ( isset( $_POST['auteur']) ) {
+        if ( isset( $_POST['auteur']) && mb_strlen( $_POST['auteur'] ) <= 255) {
             $auteur = htmlspecialchars( $_POST['auteur'] );
         }
 
-        if ( isset( $_POST['description']) ) {
+        if ( isset( $_POST['description'] ) && mb_strlen( $_POST['description'] ) <= 255) {
             $description = htmlspecialchars( $_POST['description'] );
         }
 
@@ -51,7 +51,7 @@ if ( isset( $_POST['soumettre'] ) ) {   // si la page a reçu des données du fo
             $table_matable =  $wpdb->prefix . 'william_livre';
             $requete = $wpdb->prepare( "INSERT INTO $table_matable(titre, categorie_id, auteur, description, nombre_page) VALUES (%s, %d, %s, %s, %d);", $titre, $categorie, $auteur, $description, $nombrePage );
             $reussite = $wpdb->query( $requete );
-            if ($reussite) {
+            if ( $reussite ) {
                 $_SESSION['william_ajout_reussi'] = true;
             }
         }
