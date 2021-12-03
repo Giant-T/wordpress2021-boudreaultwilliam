@@ -52,3 +52,9 @@ html, body {
     font-weight: bold;
     margin-left: 10px;
 }
+
+@media print {
+    .grecaptcha-badge, .no-print, .comment-form {
+        display: none !important
+    }
+}

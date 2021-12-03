@@ -20,16 +20,11 @@ if ( isset( $_POST['soumettre'] ) ) {   // si la page a reçu des données du fo
         }
  
         if ( isset( $_POST['categorie'] ) ) {
-            $existe = false;
-
             $table_categories = $wpdb->prefix . 'william_categorie';
             $enreg = $wpdb->get_row( $wpdb->prepare( "SELECT id FROM $table_categories WHERE id = '%d'", $_POST['categorie'] ) );
             $erreur_sql = $wpdb->last_error;
 
             if ( $erreur_sql == "" && $wpdb->num_rows > 0 ) {
-                $existe = true;
-            }
-            if ( $existe ) {
                 $categorie = htmlspecialchars( $_POST['categorie'] );
             }
         }

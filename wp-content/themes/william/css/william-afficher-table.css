@@ -1,6 +1,7 @@
 tbody, th {
     border: 1px solid black;
     border-collapse: collapse;
+    word-wrap: break-word;
 }
 
 tr:nth-child(even) {

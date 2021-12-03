@@ -5,7 +5,7 @@ require_once "../../../wp-load.php";
 $_SESSION['reussite_bd'] = false;
 $_SESSION['reussite_courriel'] = false;
         
-if ( isset( $_POST['courriel'] )  ) {
+if ( isset( $_POST['courriel'] ) ) {
     $captcha = $_POST['g-recaptcha-response'];
     if ( preg_match( '/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/', $_POST['courriel'] ) ) {
         $courriel = htmlspecialchars( $_POST['courriel'] );

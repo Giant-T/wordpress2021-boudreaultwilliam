@@ -83,7 +83,7 @@ add_filter( 'comment_excerpt', 'plc_comment_display', '', 1 );
 remove_filter( 'comment_text', 'make_clickable', 9 );
 
 // Page d'accueil en premier
-$home = get_page_by_title('Accueil');
+$home = get_page_by_title( 'Accueil' );
 update_option( 'page_on_front', $home->ID );
 update_option( 'show_on_front', 'page' );
 
@@ -238,7 +238,7 @@ function william_initialisation_bd() {
       sujet varchar(255) not null,
       message varchar(10000) not null,
       date date not null
-   ) $charset_collate";
+   ) $charset_collate;";
    dbDelta( $sql );
 
    $table_matable =  $wpdb->prefix . 'william_categorie';
@@ -343,6 +343,229 @@ function william_initialisation_bd() {
 add_action( "after_switch_theme", "william_initialisation_bd" );
 
 /**
+ * Crée la table de province
+ * 
+ * Utilisation: add_action( 'after_switch_theme', 'william_initialisation_province' );
+ * 
+ * @author William Boudreault
+ */
+function william_initialisation_province() {
+   global $wpdb;
+
+   $charset_collate = $wpdb->get_charset_collate();
+   $table_province = $wpdb->prefix . 'william_province';
+   require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
+   $sql = "CREATE TABLE $table_province (
+      id bigint(20) unsigned primary key auto_increment,
+      nom varchar(255) not null
+   ) $charset_collate;";
+   dbDelta( $sql );
+
+   $requete = "SELECT COUNT(*) FROM $table_province";
+   $presence_donnees = $wpdb->get_var( $requete );
+
+   if ( is_null( $presence_donnees ) || $presence_donnees == 0) {
+      $donnees = array(
+         array( 1, 'Québec' ),
+         array( 2, 'Ontario' ),
+      );
+      
+      foreach( $donnees as $donnee ) {
+         $reussite = $wpdb->insert(
+            $table_province,
+            array(
+                  'id' => $donnee[0],
+                  'nom' => $donnee[1],
+            ),
+
+            array(
+                  '%d',
+                  '%s',
+            )
+         );
+
+         if ( ! $reussite ) {
+            william_log_debug( $wpdb->last_error );
+         }
+
+      }
+   }
+}
+
+add_action( 'after_switch_theme', 'william_initialisation_province' );
+
+/**
+ * Crée la table de ville
+ * 
+ * Utilisation: add_action( 'after_switch_theme', 'william_initialisation_ville' );
+ * 
+ * @author William Boudreault
+ */
+function william_initialisation_ville() {
+   global $wpdb;
+
+   $charset_collate = $wpdb->get_charset_collate();
+   $table_ville = $wpdb->prefix . 'william_ville';
+   require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
+   $sql = "CREATE TABLE $table_ville (
+      id bigint(20) unsigned primary key auto_increment,
+      nom varchar(255) not null,
+      province bigint(20) unsigned not null
+   ) $charset_collate;";
+   dbDelta( $sql );
+
+   $requete = "SELECT COUNT(*) FROM $table_ville";
+   $presence_donnees = $wpdb->get_var( $requete );
+
+   if ( is_null( $presence_donnees ) || $presence_donnees == 0) {
+      $donnees = array(
+         array( 1, 'Québec', 1 ),
+         array( 2, 'Victoriaville', 1 ),
+         array( 3, 'Montréal', 1 ),
+         array( 4, 'Toronto', 2 ),
+         array( 5, 'Otawa', 2 ),
+         array( 6, 'Ajax', 2),
+      );
+      
+      foreach( $donnees as $donnee ) {
+         $reussite = $wpdb->insert(
+            $table_ville,
+            array(
+                  'id' => $donnee[0],
+                  'nom' => $donnee[1],
+                  'province' => $donnee[2],
+            ),
+
+            array(
+                  '%d',
+                  '%s',
+                  '%d',
+            )
+         );
+
+         if ( ! $reussite ) {
+            william_log_debug( $wpdb->last_error );
+         }
+
+      }
+   }
+}
+
+add_action( 'after_switch_theme', 'william_initialisation_ville' );
+
+/**
+ * Crée la table d'inscription
+ * 
+ * Utilisation: add_action() 
+ * 
+ * @author William Boudreault
+ */
+function william_initialisation_inscription() {
+   global $wpdb;
+
+   $charset_collate = $wpdb->get_charset_collate();
+   $table_inscription = $wpdb->prefix . 'william_inscription';
+   require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
+   $sql = "CREATE TABLE $table_inscription (
+      id bigint(20) unsigned primary key auto_increment,
+      nomfamille varchar(255) not null,
+      prenom varchar(255) not null,
+      addresse varchar(255) not null,
+      ville bigint(20) unsigned not null,
+      telephone varchar(12) not null,
+      courriel varchar(255) not null,
+      addresseip varchar(16) not null
+   ) $charset_collate;";
+   dbDelta( $sql );
+}
+
+add_action( 'after_switch_theme', 'william_initialisation_inscription' );
+
+/**
+ * Shortcode du formulaire d'inscription
+ * 
+ * Utilisation: add_shortcode('williamformulaireinscription', 'william_formulaire_inscription')
+ * 
+ * @author William Boudreault
+ */
+function william_formulaire_inscription() {
+   $code_html = '';
+   $url_action = get_stylesheet_directory_uri() . '/enregistrer-inscription.php';
+   $code_html .= "<form class='no-print' method='POST' action='$url_action' id='formulaireinscription'>";
+   $code_html .= "<label for='prenom'>". __( 'Prénom', 'william' ) .":*</label><br>";
+   $code_html .= "<input type='text' required id='prenom' name='prenom' maxlength='255'><br>";
+   $code_html .= "<label for='nomfamille'>". __( 'Nom de famille', 'william' ) .":*</label><br>";
+   $code_html .= "<input type='text' required id='nomfamille' name='nomfamille' maxlength='255'><br>";
+   $code_html .= "<label for='addresse'>". __( 'Adresse', 'william' ) .":*</label><br>";
+   $code_html .= "<input type='text' required id='addresse' name='addresse' maxlength='255' placeholder=\"123 rue de l'Importance\"><br>";
+   $code_html .= "<label for='province'>". __('Province', 'william' ) .":*</label><br>";
+   $code_html .= "<select id='province' name='province' >";
+   global $wpdb;
+   $table_province = $wpdb->prefix . 'william_province'; 
+   $requete = "SELECT id, nom FROM $table_province ORDER BY nom ASC";
+   $resultat = $wpdb->get_results( $requete );
+
+   $erreur_sql = $wpdb->last_error;
+   if ( $erreur_sql == "" ) {
+      if ( $wpdb->num_rows > 0 ){
+         $code_html .= "<option value='' selected>" . __( "Veuillez selectionner une province...", 'william' ) . "</option>";
+         foreach( $resultat as $enreg ) {
+            $code_html .=  "<option value='$enreg->id'>$enreg->nom</option>";
+         }
+      }
+      else {
+         $code_html .= "<option value='' selected>" . __( "Aucune donnée est disponible", 'william' ) . "</option>";
+      }
+   }
+   else { 
+      $code_html .= "<option value='' selected>" . __( "Accès aux données impossible.", 'william' ) . "</option>";
+   }
+   $code_html .= "</select><br>";
+   $code_html .= "<label for='ville'>". __('Ville', 'william' ) .":*</label><br>";
+   $code_html .= "<select id='ville' name='ville' >";
+   $code_html .= "<option value='' selected>". __('Aucune ville.', 'william' ). "</option>";
+   $code_html .= "</select><br>";
+   $code_html .= "<label for='telephone'>". __( 'Numéro de téléphone', 'william' ) .":*</label><br>";
+   $code_html .= "<input type='text' required id='telephone' name='telephone' maxlength='12' placeholder='123 456 7891'><br>";
+   $code_html .= "<label for='courriel'>". __( 'Addresse courriel', 'william' ) .":*</label><br>";
+   $code_html .= "<input type='text' required id='courriel' name='courriel' maxlength='255' placeholder='example@courriel.com'><br><br>";
+   $code_html .= "<input type='submit' name='soumettre_inscription' value='". __( 'Soumettre', 'william' )."'>";
+   $code_html .= "</form>";
+   return $code_html;
+}
+
+add_shortcode('williamformulaireinscription', 'william_formulaire_inscription');
+
+
+/**
+ * Affiche le message si l'inscription a reussie
+ * 
+ * Utilisation : add_shortcode('williamaffichermessageinscription', 'william_afficher_message_inscription');
+ * 
+ * @author William Boudreault
+ */
+function william_afficher_message_inscription() {
+   if ( isset( $_SESSION['william_ajout_inscription_reussi'] ) && isset( $_SESSION['william_message_inscription'] ) ) {
+      if ( $_SESSION['william_ajout_inscription_reussi'] ) {
+         echo "<div class='message-reussite'>";
+      }
+      else {
+         echo "<div class='message-erreur'>";
+      }
+      echo $_SESSION['william_message_inscription'];
+      echo "</div>";
+
+      $_SESSION['william_message_inscription'] = null;
+      $_SESSION['william_ajout_inscription_reussi'] = null;
+   }
+}
+
+add_shortcode( 'williamaffichermessageinscription', 'william_afficher_message_inscription' );
+
+/**
  * Avertir l'usager qu'une maintenance du site est prévue prochainement.
  *
  * Utilisation : add_action( 'loop_start', 'william_avertir_maintenance' );
@@ -443,7 +666,7 @@ function william_creer_page_edition( $id ) {
       ?>
       <div class="wrap">
          <h1 class="wp-heading-inline"><?php echo $title; ?></h1>
-         <form method="post" id="formulaireModif" action="<?php echo $url_action; ?>">
+         <form method="post" id="formulaireModif" class="no-print" action="<?php echo $url_action; ?>">
             <?php wp_nonce_field( "modifier_item_bd_$id", 'nonce_valide', true ); ?>
             <input type="hidden" id="id" name="id" value="<?php echo $id; ?>">
             <label for="titre"><?php _e( 'Titre', 'william' ); ?>:</label><br>
@@ -522,8 +745,7 @@ function william_afficher_items_admin() {
             $output .= "<tr>";
             $url_suppression = get_stylesheet_directory_uri() . "/suppression-item.php?id=$enreg->id_livre";
             $url_suppression_protege = wp_nonce_url( $url_suppression, "supprimer_item_$enreg->id_livre" );
-            $output .= "<td class='title column-title has-row-actions column-primary page-title'>$enreg->titre_livre<div class='row-actions'> <span class='edit'><a href='". admin_url( "admin.php?page=william_gestion&id=$enreg->id_livre&action=edit" ) ."'>". __( 'Modifier', 'william' ) ."</a></span> | 
-                        <span class='trash'><a href='". $url_suppression_protege ."' class='submitdelete'>". __( 'Supprimer', 'william' ) ."</a></span></div></td>";
+            $output .= "<td class='title column-title has-row-actions column-primary page-title'>$enreg->titre_livre<div class='row-actions'> <span class='edit'><a href='". admin_url( "admin.php?page=william_gestion&id=$enreg->id_livre&action=edit" ) ."'>". __( 'Modifier', 'william' ) ."</a></span> | <span class='trash'><a href='". $url_suppression_protege ."' class='submitdelete'>". __( 'Supprimer', 'william' ) ."</a></span></div></td>";
             $output .= "<td>$enreg->auteur</td>";
             $output .= "<td>$enreg->categorie</td>";
             $output .= "<td>$enreg->nombre_page</td>";
@@ -562,7 +784,7 @@ function william_creer_page_ajout() {
    ?>
    <div class="wrap">
       <h1 class="wp-heading-inline"><?php echo $title; ?></h1>
-      <form method="post" id="formulaireItem" action=" <?php echo $url_action; ?>" >
+      <form method="post" class="no-print" id="formulaireItem" action=" <?php echo $url_action; ?>" >
          <?php wp_nonce_field( 'ajouter_item_bd', 'validite_nonce', true ); ?>
          <label for="titre"><?php _e( 'Titre', 'william' ) ?>:</label><br>
          <input type="text" id="titre" name="titre" required placeholder='<?php _e( 'Titre', 'william' ) ?>' maxlength="255"><br>
@@ -712,7 +934,7 @@ function william_formulaire_contact() {
    $champCourriel = __( "Courriel", "william" );
    $champSujet = __( "Sujet", "william" );
    $champMessage = __( "Message", "william" );
-   $output = "<form id='formulaireContact' action='". get_stylesheet_directory_uri(). "/envoyer-courriel-contact.php"."' method='post'>
+   $output = "<form id='formulaireContact' class='no-print' action='". get_stylesheet_directory_uri(). "/envoyer-courriel-contact.php"."' method='post'>
                   <label for='courriel'>*$champCourriel:</label><br>
                   <input type='email' id='courriel' name='courriel' placeholder='exemple@courriel.abc'><br>
                   <label for='sujet'>*$champSujet:</label><br>
@@ -843,6 +1065,10 @@ function william_charger_js() {
       wp_enqueue_script( 'script_formulaire_contact', get_stylesheet_directory_uri() . '/js/formulaire_script.js', array(), null, true );
       // charge l'API de Google reCAPTCHA
       wp_enqueue_script( 'apigooglerecaptcha', 'https://www.google.com/recaptcha/api.js?render=6LdyR_0cAAAAAIHvUfQUdWy8PbiVsFuphgL4u1O4' );
+   }
+   elseif ( has_shortcode( $post->post_content, 'williamformulaireinscription' ) ) {
+      wp_enqueue_script( 'williamformulaireinscription', get_stylesheet_directory_uri() . '/js/formulaire_inscription.js', array(), null, true );
+      wp_localize_script( 'williamformulaireinscription', 'variablesPHP', ['urlThemeEnfant' => get_stylesheet_directory_uri()] );
    }
 }
 
