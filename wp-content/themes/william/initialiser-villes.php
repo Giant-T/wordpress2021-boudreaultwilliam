@@ -6,7 +6,7 @@ if ( isset( $_GET['id_province'] ) && is_numeric( $_GET['id_province'] ) ) {
     $reponse = '';
     $id_province = intval($_GET['id_province']);
     $table_ville = $wpdb->prefix . 'william_ville'; 
-    $requete = $wpdb->prepare( "SELECT id, nom FROM $table_ville WHERE province = %d;", $id_province );
+    $requete = $wpdb->prepare( "SELECT id, nom FROM $table_ville WHERE province = %d ORDER BY nom ASC;", $id_province );
     $resultat = $wpdb->get_results( $requete );
     $erreur = $wpdb->last_error;
     if ( $erreur == "" ) {
@@ -18,15 +18,15 @@ if ( isset( $_GET['id_province'] ) && is_numeric( $_GET['id_province'] ) ) {
             $reponse = json_encode($valeurs);
         }
         else {
-            $reponse = json_encode( array( array( 'id' => '', 'nom' => 'Aucune donné dans cette province.' ) ) );
+            $reponse = json_encode( array( array( 'id' => '', 'nom' => __( 'Aucune donné dans cette province.', 'william' ) ) ) );
         }
     }
     else {
         william_log_debug( $wpdb->last_error );
-        $reponse = json_encode( array( array( 'id' => '', 'nom' =>'Accès au données impossible.' ) ) );
+        $reponse = json_encode( array( array( 'id' => '', 'nom' => __( 'Accès au données impossible.', 'william' ) ) ) );
     }
     echo $reponse;
 }
 else {
-    http_response_code(500);
+    http_response_code(418);
 }

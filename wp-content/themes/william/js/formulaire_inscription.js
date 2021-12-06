@@ -42,11 +42,11 @@ function remplirOptions(select, jsonArray) {
     for (let i = 0; i < jsonArray.length; i++) {
         let obj = jsonArray[i];
         let option = document.createElement('option');
-        if (i === 0) option.selected = true;
         option.value = obj.id;
-        option.innerHTML = obj.nom;
+        option.innerText = obj.nom;
         select.appendChild(option);
     }
+    select.firstChild.selected = true;
 }
 
 /**

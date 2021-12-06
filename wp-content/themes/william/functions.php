@@ -570,15 +570,35 @@ add_shortcode( 'williamaffichermessageinscription', 'william_afficher_message_in
  *
  * Utilisation : add_action( 'loop_start', 'william_avertir_maintenance' );
  *
- * @author Christiane Lagacé
+ * @author William Boudreault
  *
  */
 function william_avertir_maintenance( $array ) {
-   // on pourrait aussi travailler avec la base de données pour savoir quand un message doit être affiché ou non et pour retrouver le message à afficher.
-   echo '<div class="messagegeneral">'. __( 'Attention : le 16 juin à 11h, des travaux d\'entretien seront effectués. Le site ne sera pas disponible pendant deux heures.' ) . '</div>';
+   $message = get_theme_mod( 'texte_banniere', '');
+
+   if ( $message != '' ) {
+      // on pourrait aussi travailler avec la base de données pour savoir quand un message doit être affiché ou non et pour retrouver le message à afficher.
+      echo "<div class='messagegeneral'>$message</div><br>";
+   }
 };
 
-// add_action( 'loop_start', 'william_avertir_maintenance' );
+add_action( 'loop_start', 'william_avertir_maintenance' );
+
+/**
+ * Avertir l'usager que le site est en maintenance.
+ *
+ * Utilisation : add_action( 'loop_start', 'william_avertir_debug' );
+ *
+ * @author William Boudreault
+ *
+ */
+function william_avertir_debug( $array ) {
+   if ( WP_DEBUG == true ) {
+      echo "<div class='messagegeneral'>". __( 'Le site est actuellement en mode débug.', 'william' ) ."</div><br>";
+   }
+};
+
+add_action( 'loop_start', 'william_avertir_debug' );
 
 /**
  * Cree une page d'admin.
@@ -922,6 +942,38 @@ function william_ajouter_menu_tableau_bord() {
 }
 
 add_action( "admin_menu", "william_ajouter_menu_tableau_bord" );
+
+/**
+ * Définit les options du thème, les sections de la page de personnalisation et les contrôles de saisie.
+ * 
+ * Utilisation : add_action('customize_register', 'william_customize');
+ * 
+ * @author William Boudreault
+ */
+function william_customize( $wp_customize ) {
+   // crée une nouvelle section dans la page de personnalisation
+    $wp_customize->add_section(
+        'william_options', array(
+            'title'    => __( 'Options du thème enfant', 'william' ),
+            'priority' => 15,  // indique son emplacement parmi les sections existantes
+    ) );
+
+    // définit une option
+    $wp_customize->add_setting(
+        'texte_banniere', array(
+            'default' => '',
+    ) );
+
+    // dans la section, ajoute un contrôle pour saisir la valeur de l'option
+    $wp_customize->add_control(
+        'texte_banniere', array(
+            'label'   => __( 'Texte bannière', 'william' ),
+            'section' => 'william_options',
+            'type'    => 'text',
+    ) );
+}
+
+add_action('customize_register', 'william_customize');
 
 /**
  * Affichage du formulaire de contact
